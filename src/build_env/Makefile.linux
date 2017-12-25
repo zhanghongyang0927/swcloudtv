@@ -1,0 +1,14 @@
+
+C_FLAGS += -static
+CXX_FLAGS += -static -fno-exceptions
+
+EXTRA_FLAGS += -pthread -fpic
+
+# Needed for Ubuntu builds if SSL is enabled and for real-time posix functions, respectively
+EXT_LIBS += dl rt
+
+ifeq ($(ENABLE_COVERAGE),1)
+  EXT_LIBS += gcov
+endif
+
+LINK_CMD = $(CXX) $(EXTRA_FLAGS) $(O_FILES) -L$(LIB_DIR) -Wl,--start-group $(addprefix -l$(libname_prefix),$(IN_LIBS)) -Wl,--end-group $(addprefix -L,$(EXT_LIB_DIRS)) $(addprefix -l,$(EXT_LIBS)) -o $@

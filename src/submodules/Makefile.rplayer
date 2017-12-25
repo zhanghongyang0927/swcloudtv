@@ -1,0 +1,6 @@
+
+LIB_NAME := rplayer
+
+SRC_DIR := rplayer/src rplayer/rams/src rplayer/ts/src rplayer/underrun_mitigator/src rplayer/underrun_mitigator/avctk rplayer/utils/src
+
+include ../build_env/Makefile.include

@@ -1,0 +1,12 @@
+
+# Map library names to directories; might be unneeded in the future
+lib2dir_map := rplayer:submodules googletest:submodules custom_stl:build_env/stl sdk:sdk_library sdk_s:sdk_library
+libs_needing_target := rplayer googletest
+
+define lib2dir
+$(or $(subst $(1):,,$(filter $(1):%,$(lib2dir_map))),$(1))
+endef
+
+define lib2target
+$(filter $(1),$(libs_needing_target))
+endef

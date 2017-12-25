@@ -1,0 +1,97 @@
+
+ifeq ($(OS),Windows_NT) # MingW variable
+  COMPILER_PREFIX=
+else
+  UNAME_S := $(shell uname -s)
+  ifeq ($(UNAME_S),Linux)
+    UNAME_A := $(shell uname -a | grep Ubuntu)
+    ifeq ($(UNAME_A),)
+      # Mingw can be installed on CentOs using:
+      # sudo yum install mingw32-gcc-c++.x86_64
+      COMPILER_PREFIX=i686-w64-mingw32-
+    else
+      # Ubuntu
+      COMPILER_PREFIX=x86_64-w64-mingw32-
+    endif
+  endif
+  ifeq ($(UNAME_S),Darwin)
+    # Mingw can be installed on Mac using:
+    # sudo port install i386-mingw32-binutils i386-mingw32-gcc i386-mingw32-libunicows i386-mingw32-runtime i386-mingw32-w32api
+    COMPILER_PREFIX=i386-mingw32-
+  endif
+endif
+
+CC = $(COMPILER_PREFIX)gcc
+CXX = $(COMPILER_PREFIX)g++
+AR = $(COMPILER_PREFIX)ar
+LD = $(COMPILER_PREFIX)ld
+
+C_FLAGS += -static-libgcc
+
+# The Mingw compiler is old and doesn't recognize certain options
+CXX_FLAGS := $(filter-out -std=c++03,$(CXX_FLAGS))
+EXTRA_FLAGS := $(filter-out -Wno-format-zero-length,$(EXTRA_FLAGS))
+ifeq ($(ENABLE_DEBUG),1)
+  # The debug code has zero-length format strings that we're nbot able to switch off separately
+  EXTRA_FLAGS += -Wno-format
+endif
+
+EXT_LIB_DIRS += /local/lib /local/ssl/lib /lib
+INCLUDES += /opt/local/include \
+            /local/ssl/include \
+            /local/include
+
+EXT_LIBS += ws2_32 gdi32 pthread
+
+SOLIB_SUFFIX = .dll
+SOLIB_PREFIX =
+
+# Create Windows metadata resources if building a DLL and include it in the DLL
+RES_FILE = $(OBJ_DIR)/resources.rc
+RES_O_FILE = $(OBJ_DIR)/winres.o
+O_FILES += $(if $(SOLIB_NAME),$(RES_O_FILE))
+COMMA := ,
+COPYRIGHT_SIGN := $(shell printf \\251)
+
+$(RES_O_FILE): $(RES_FILE)
+	@echo CREATING $@ from $<
+	@$(COMPILER_PREFIX)windres $< $@
+
+# Replace words (like 'alpha', 'beta') with a .0 and make sure that at most four
+# number groups are in the Windows style version number. For example '4.3.0.0'.
+#CTVC_VERSION_WIN=$(shell echo $(CTVC_VERSION).0.0.0 | sed -e 's/\([0-9]*\)[^\.]*/\1/g' | sed -e 's/\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\).*/\1.\2.\3.\4/')
+CTVC_VERSION_WIN=$(shell echo $(CTVC_VERSION).0.0.0 | sed -e 's/\([\._ -]*[a-zA-Z][a-zA-Z]*[\._ -]*[0-9]*\)/.0/g' | sed -e 's/\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\).*/\1.\2.\3.\4/')
+
+.PHONY: $(RES_FILE)
+$(RES_FILE):
+	@echo CREATING $@
+	@mkdir -p $(OBJ_DIR)
+	@echo '#include <windows.h>'                                              > $(RES_FILE)
+	@echo                                                                    >> $(RES_FILE)
+	@echo '// DLL version information.'                                      >> $(RES_FILE)
+	@echo 'VS_VERSION_INFO    VERSIONINFO'                                   >> $(RES_FILE)
+	@echo 'FILEVERSION        $(subst .,$(COMMA),$(CTVC_VERSION_WIN))'       >> $(RES_FILE)
+	@echo 'PRODUCTVERSION     $(subst .,$(COMMA),$(CTVC_VERSION_WIN))'       >> $(RES_FILE)
+	@echo 'FILEOS             VOS_NT_WINDOWS32'                              >> $(RES_FILE)
+	@echo 'FILETYPE           VFT_DLL'                                       >> $(RES_FILE)
+	@echo 'FILESUBTYPE        VFT2_UNKNOWN'                                  >> $(RES_FILE)
+	@echo 'BEGIN'                                                            >> $(RES_FILE)
+	@echo '  BLOCK "StringFileInfo"'                                         >> $(RES_FILE)
+	@echo '  BEGIN'                                                          >> $(RES_FILE)
+	@echo '    BLOCK "040904E4"'                                             >> $(RES_FILE)
+	@echo '    BEGIN'                                                        >> $(RES_FILE)
+	@echo '      VALUE "CompanyName", "ActiveVideo"'                         >> $(RES_FILE)
+	@echo '      VALUE "FileDescription", "RFBTV CloudTV Nano SDK Library."' >> $(RES_FILE)
+	@echo '      VALUE "FileVersion", "$(CTVC_VERSION)"'                     >> $(RES_FILE)
+	@echo '      VALUE "InternalName", "$(notdir $(SOLIB_FILE))"'            >> $(RES_FILE)
+	@echo '      VALUE "LegalCopyright", "$(COPYRIGHT_SIGN)$(shell date +%Y) ActiveVideo"'  >> $(RES_FILE)
+	@echo '      VALUE "OriginalFilename", "$(notdir $(SOLIB_FILE))"'        >> $(RES_FILE)
+	@echo '      VALUE "ProductName", "Nano SDK Library"'                    >> $(RES_FILE)
+	@echo '      VALUE "ProductVersion", "$(CTVC_VERSION)"'                  >> $(RES_FILE)
+	@echo '    END'                                                          >> $(RES_FILE)
+	@echo '  END'                                                            >> $(RES_FILE)
+	@echo '  BLOCK "VarFileInfo"'                                            >> $(RES_FILE)
+	@echo '  BEGIN'                                                          >> $(RES_FILE)
+	@echo '    VALUE "Translation", 0x409, 1252'                             >> $(RES_FILE)
+	@echo '  END'                                                            >> $(RES_FILE)
+	@echo 'END'                                                              >> $(RES_FILE)

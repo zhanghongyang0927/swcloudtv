@@ -1,0 +1,10 @@
+
+C_FLAGS += -fPIC -mmacosx-version-min=10.7
+CXX_FLAGS += -fPIC -mmacosx-version-min=10.7
+EXTRA_FLAGS += -stdlib=libc++ -Wno-deprecated-declarations
+
+# Needed for OpenSSl when using MacPorts
+INCLUDES += /opt/local/include
+
+SOLIB_CMD = $(CXX) $(EXTRA_FLAGS) -shared -o $(SOLIB_FILE) -Wl,-all_load $(O_FILES) $(LINK_LIBS) -Wl,-noall_load $(addprefix -L,$(EXT_LIB_DIRS)) $(addprefix -l,$(EXT_LIBS))
+SOLIB_SUFFIX = .dylib

@@ -1,0 +1,15 @@
+# This file is included from Makefile.include
+
+ifeq ($(OS),Windows_NT) # MingW variable
+  # $(PROCESSOR_ARCHITECTURE) defines the processor, if needed (either AMD64 ox x86)
+  include $(cur_dir)/Makefile.win
+else
+  UNAME_S := $(shell uname -s)
+  ifeq ($(UNAME_S),Linux)
+    include $(cur_dir)/Makefile.linux
+  endif
+  ifeq ($(UNAME_S),Darwin)
+    include $(cur_dir)/Makefile.mac
+  endif
+  # $(shell uname -p) gets the processor
+endif

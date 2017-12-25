@@ -1,0 +1,47 @@
+///
+/// \copyright Copyright © 2017 ActiveVideo, Inc. and/or its affiliates.
+/// Reproduction in whole or in part without written permission is prohibited.
+/// All rights reserved. U.S. Patents listed at http://www.activevideo.com/patents
+///
+
+#pragma once
+
+namespace std
+{
+template<typename T> inline const T &min(const T &a, const T & b)
+{
+    if (a < b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+template<typename T> inline const T &max(const T &a, const T & b)
+{
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+template<class T> inline void swap(T &a, T &b)
+{
+    T tmp(a);
+    a = b;
+    b = tmp;
+}
+
+template<class InputIterator, class T>
+InputIterator find(InputIterator first, InputIterator last, const T &val)
+{
+    while (first != last) {
+        if (*first == val)
+            return first;
+        ++first;
+    }
+    return last;
+}
+
+}

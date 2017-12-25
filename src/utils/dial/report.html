@@ -1,0 +1,143 @@
+<html>
+<body>
+<font size="6"><b>FriendlyName: ActiveVideo CloudTV Client<br>
+IP: 172.16.106.141<br>
+UUID: uuid:21e76d22-3fc9-49ce-aeeb-f938de6033ea<br>
+Time of Run: Tue Feb 16 15:27:54 2016</b></font><table border="10">
+<tr>
+<th> RESULT </th><th> Test Executed </th><th> Errors </th></tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:launch=Netflix Params:httpresponse=201 httpresponse=Created httpresponseheader=Location  </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=Netflix Params:httpresponse=200 resultbody=state resultbody=running </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:stop=Netflix </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:stop=Netflix Params:httpresponse=404 </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=Netflix Params:httpresponse=200 resultbody=state resultbody=stopped </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:launch=Netflix Params:param="NETFLIX&WAS+HERE" httpresponse=201 httpresponse=Created httpresponseheader=Location  </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=Netflix Params:httpresponse=200 resultbody=state resultbody=running </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:launch=Netflix Params:param="NETFLIX&WAS*HERE" httpresponse=201 httpresponse=Created httpresponseheader=Location  </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=Netflix Params:httpresponse=200 resultbody=state resultbody=running </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:launch=Netflix Params:param="&&&%%%ThisShouldRelaunch%%%" httpresponse=201 httpresponse=Created httpresponseheader=Location  </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=Netflix Params:httpresponse=200 resultbody=state resultbody=running </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:stop=Netflix </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=Netflix Params:httpresponse=200 resultbody=state resultbody=stopped </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:launch=Netflix Params:param="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa... httpresponse=413 </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:launch=netflix Params:httpresponse=404 </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:launch=Netflix1 Params:httpresponse=404 </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=Netflix1 Params:httpresponse=404 </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=Netflix Params:httpresponse=200 resultbody=state resultbody=stopped </td>
+<td>
+NO ERROR
+</td>
+</tr>
+<tr>
+<td><b> <font color="green"> SUCCESS </b></font></td>
+<td>Command:status=YouTube Params:httpresponse=200 resultbody=state resultbody=stopped </td>
+<td>
+NO ERROR
+</td>
+</tr>
+</table></body>
+</html>

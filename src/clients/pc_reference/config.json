@@ -1,0 +1,22 @@
+{
+    "base_store_path": "./.av_store/",
+    "session_manager_url": "rfbtv://127.0.0.1:8095",
+    "mac_address": "00:AA:00:AA:00:AA",
+    "rfbtv": {
+        "client_manufacturer": "avplay",
+        "client_model": "linux_ref",
+        "resolution": "1280x720",
+        "app_url": "webkit:http://www.youtube.com/tv",
+        "ca_path": "/Applications/CloudTVPlayer.app/Contents/Resources/ca.crt",
+        "ca_client_path": "/Users/alennartsson/client_dev/f5_test/f5test.com_self-signed_rfbtv.crt",
+        "private_key_path": "/Users/alennartsson/client_dev/f5_test/f5test.com_self-signed_rfbtv.key",
+        "stream_forward_url": "udp://127.0.0.1:12345",
+        "setup_params": {
+            "lang": "en",
+            "lan": "eth",
+            "fw": "3.1.2",
+            "channel": "tv:cnn",
+            "acodec": "ac3"
+        }
+    }
+}

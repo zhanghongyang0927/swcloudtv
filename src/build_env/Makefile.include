@@ -1,0 +1,36 @@
+
+cur_dir := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+root_dir := $(realpath $(cur_dir)..)
+
+libname_prefix := cloudtv_
+
+CFLAGS += -DCTVC_VERSION=$(CTVC_VERSION)
+$(info $(CTVC_VERSION))
+
+CFLAGS += -fPIC
+
+ifeq ($(origin LIB_NAME),undefined)
+$(info undefined)
+else
+NAME = $(libname_prefix)$(LIB_NAME)
+endif
+$(info zhyfate final name=$(NAME))
+
+BUILD_TARGET_TYPE := static
+
+BINDIR := $(ROOTDIR)/out/libs/swcloudtv
+
+SRC_DIR ?= . ./src
+SRC ?= $(foreach dir,$(SRC_DIR),$(wildcard $(dir)/*.c $(dir)/*.cpp $(dir)/*.cc))
+
+INCLUDES += $(root_dir) $(root_dir)/submodules
+
+INCLUDES += $(SWAPIROOT)/pub/base/include 
+
+INCLUDE_PREFIX ?= -I
+INCDIR = $(addprefix $(INCLUDE_PREFIX),$(INCLUDES))
+
+$(info ***********************)
+
+-include $(SWAPIROOT)/build/common.Makefile
+

@@ -1,0 +1,222 @@
+///
+/// \copyright Copyright © 2017 ActiveVideo, Inc. and/or its affiliates.
+/// Reproduction in whole or in part without written permission is prohibited.
+/// All rights reserved. U.S. Patents listed at http://www.activevideo.com/patents
+///
+
+#pragma once
+
+#include <stddef.h>
+#include <assert.h>
+
+namespace std
+{
+template<typename T> class list
+{
+public:
+    // This represents one element of the list with its corresponding pointers
+    class ListNode
+    {
+    public:
+        ListNode() :
+            m_next_node(0),
+            m_prev_node(0)
+        {
+        }
+
+        ListNode(T content) :
+            m_user_data(content),
+            m_next_node(0),
+            m_prev_node(0)
+        {
+        }
+
+        T m_user_data;
+        ListNode *m_next_node;
+        ListNode *m_prev_node;
+
+    private:
+        ListNode(const ListNode &);
+        ListNode &operator=(const ListNode &);
+    };
+
+    // This class is only used to iterate over the nodes
+    class ListIterator
+    {
+    public:
+        ListIterator() :
+            m_current_node(0)
+        {
+        }
+
+        ListIterator(ListNode *node) :
+            m_current_node(node)
+        {
+        }
+
+        ListIterator(const ListIterator &other) :
+            m_current_node(other.m_current_node)
+        {
+        }
+
+        ListIterator &operator=(const ListIterator &rhs)
+        {
+            m_current_node = rhs.m_current_node;
+
+            return *this;
+        }
+
+        bool operator==(const ListIterator &rhs) const
+        {
+            return m_current_node == rhs.m_current_node;
+        }
+
+        bool operator!=(const ListIterator &rhs) const
+        {
+            return !(*this == rhs);
+        }
+
+        T *operator->()
+        {
+            return &m_current_node->m_user_data;
+        }
+
+        ListIterator &operator++()
+        {
+            m_current_node = m_current_node->m_next_node;
+            return *this;
+        }
+
+        ListIterator &operator--()
+        {
+            m_current_node = m_current_node->m_prev_node;
+            return *this;
+        }
+
+        T &operator*()
+        {
+            return m_current_node->m_user_data;
+        }
+
+        ListNode *m_current_node;
+    };
+
+    typedef ListIterator iterator;
+
+    list() :
+        m_num_elements(0)
+    {
+        m_list_head.m_next_node = &m_list_head;
+        m_list_head.m_prev_node = &m_list_head;
+    }
+
+    ~list()
+    {
+        clear();
+    }
+
+    bool empty() const
+    {
+        return m_num_elements == 0;
+    }
+
+    void clear()
+    {
+        while (m_list_head.m_next_node != &m_list_head) {
+            pop_front();
+        }
+
+        assert(m_num_elements == 0);
+    }
+
+    void push_back(const T &val)
+    {
+        insert(end(), val);
+    }
+
+    void pop_front()
+    {
+        erase(m_list_head.m_next_node);
+    }
+
+    size_t size() const
+    {
+        return m_num_elements;
+    }
+
+    T &front()
+    {
+        assert(m_num_elements > 0);
+
+        return m_list_head.m_next_node->m_user_data;
+    }
+
+    T &back()
+    {
+        assert(m_num_elements > 0);
+
+        return m_list_head.m_prev_node->m_user_data;
+    }
+
+    void pop_back()
+    {
+        erase(m_list_head.m_prev_node);
+    }
+
+    iterator insert(iterator position, const T &val)
+    {
+        ListNode *new_node = new ListNode(val);
+
+        new_node->m_next_node = position.m_current_node;
+        new_node->m_prev_node = position.m_current_node->m_prev_node;
+
+        new_node->m_prev_node->m_next_node = new_node;
+        new_node->m_next_node->m_prev_node = new_node;
+
+        ++m_num_elements;
+
+        return begin();
+    }
+
+    iterator end()
+    {
+        return iterator(&m_list_head);
+    }
+
+    iterator begin()
+    {
+        return iterator(m_list_head.m_next_node);
+    }
+
+    iterator erase(iterator position)
+    {
+        ListNode *node = position.m_current_node;
+
+        // This implies that the iterator was never initialized
+        assert(node != 0);
+
+        // This should never happen, it implies that position is end()
+        assert(node != &m_list_head);
+
+        node->m_prev_node->m_next_node = node->m_next_node;
+        node->m_next_node->m_prev_node = node->m_prev_node;
+
+        iterator next_iterator(node->m_next_node);
+
+        delete node;
+        --m_num_elements;
+
+        return next_iterator;
+    }
+
+private:
+    list(const list &);
+    list &operator=(const list &);
+
+    // There is always one element in the list which has no user content at all.
+    // It represents the end of the list and points to the first element in the list.
+    ListNode m_list_head;
+
+    size_t m_num_elements;
+};
+}

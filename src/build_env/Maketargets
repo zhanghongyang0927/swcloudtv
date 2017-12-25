@@ -1,0 +1,16 @@
+
+# Map targets to platforms
+target_to_platform_map := none:none \
+                          test:native \
+                          mac:mac \
+                          linux:linux \
+                          win:win \
+                          vip1002:vip1xxx vip1113:vip1xxx vip1853:vip1xxx \
+                          vip4302:vip4302 \
+                          albis.8073:albis albis.8083:albis \
+                          mediaroom:mediaroom \
+                          metrowerks:metrowerks
+
+PLATFORM := $(subst $(TARGET):,,$(filter $(TARGET):%,$(target_to_platform_map)))
+
+SUPPORTED_TARGETS := $(foreach map,$(target_to_platform_map),$(firstword $(subst :, ,$(map))))

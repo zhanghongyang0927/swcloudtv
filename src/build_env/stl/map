@@ -1,0 +1,269 @@
+///
+/// \copyright Copyright © 2017 ActiveVideo, Inc. and/or its affiliates.
+/// Reproduction in whole or in part without written permission is prohibited.
+/// All rights reserved. U.S. Patents listed at http://www.activevideo.com/patents
+///
+
+#pragma once
+
+#include <vector>
+#include <utility>
+
+#include <assert.h>
+#include <stddef.h>
+#include <sys/types.h>
+
+namespace std {
+
+template<typename KEYTYPE, typename VALUETYPE> class map
+{
+public:
+    typedef std::pair<KEYTYPE, VALUETYPE> MapNode;
+    typedef std::vector<MapNode *> PairVector;
+    typedef typename std::vector<MapNode *>::iterator PairVectorIterator;
+    typedef MapNode value_type;
+
+    class MapIterator
+    {
+    public:
+        MapIterator() :
+            m_node(0)
+        {
+        }
+
+        MapIterator(const MapIterator &rhs) :
+            m_node(rhs.m_node)
+        {
+        }
+
+        MapIterator(MapNode **node) :
+            m_node(node)
+        {
+        }
+
+        MapIterator(MapNode * const *node) :
+            m_node(const_cast<MapNode **>(node))
+        {
+        }
+
+        MapIterator &operator=(const MapIterator &rhs)
+        {
+            this->m_node = rhs.m_node;
+
+            return *this;
+        }
+
+        bool operator==(const MapIterator &rhs) const
+        {
+            return m_node == rhs.m_node;
+        }
+
+        bool operator!=(const MapIterator &rhs) const
+        {
+            return !(*this == rhs);
+        }
+
+        operator PairVectorIterator()
+        {
+            return static_cast<PairVectorIterator>(m_node);
+        }
+
+        MapNode *operator->()
+        {
+            return *m_node;
+        }
+
+        const MapNode *operator->() const
+        {
+            return *m_node;
+        }
+
+        MapNode &operator*()
+        {
+            return **(m_node);
+        }
+
+        MapIterator &operator++()
+        {
+            ++m_node;
+            return *this;
+        }
+
+        MapIterator &operator--()
+        {
+            --m_node;
+            return *this;
+        }
+
+    private:
+        MapNode **m_node;
+    };
+
+    typedef MapIterator iterator;
+
+    // This cannot be declare as "typedef const MapIterator const_iterator"
+    // because we wouldn't have access to the increment operator (for example).
+    // The elegant solution would be to declare a separate class (e.g.
+    // MapConstIterator) for it.
+    typedef MapIterator const_iterator;
+
+    map()
+    {
+    }
+
+    map(const map &rhs)
+    {
+        *this = rhs;
+    }
+
+    ~map()
+    {
+        clear();
+    }
+
+    map &operator=(const map &rhs)
+    {
+        if (this != &rhs) {
+            clear();
+
+            const_iterator it = rhs.begin();
+
+            while (it != rhs.end()) {
+                m_internal_vector.push_back(new MapNode(it->first, it->second));
+                ++it;
+            }
+        }
+
+        return *this;
+    }
+
+    iterator find(const KEYTYPE &key)
+    {
+        return begin() + binary_search(key, 0, m_internal_vector.size() - 1);
+    }
+
+    const_iterator find(const KEYTYPE &key) const
+    {
+        return begin() + binary_search(key, 0, m_internal_vector.size() - 1);
+    }
+
+    iterator begin()
+    {
+        return &m_internal_vector[0];
+    }
+
+    const_iterator begin() const
+    {
+        return &m_internal_vector[0];
+    }
+
+    iterator end()
+    {
+        return begin() + m_internal_vector.size();
+    }
+
+    const_iterator end() const
+    {
+        return begin() + m_internal_vector.size();
+    }
+
+    std::pair<iterator, bool> insert(const value_type &value)
+    {
+        ssize_t pivot = 0;
+        size_t pos = binary_search(value.first, 0, static_cast<ssize_t>(m_internal_vector.size()) - 1, pivot);
+
+        bool insertion_succeeded = false;
+        if (pos == m_internal_vector.size()) {
+            m_internal_vector.insert(m_internal_vector.begin() + pivot, new MapNode(value));
+            pos = pivot;
+            insertion_succeeded = true;
+        }
+
+        return std::pair<iterator, bool>(&m_internal_vector[pos], insertion_succeeded);
+    }
+
+    VALUETYPE &operator[](const KEYTYPE &key)
+    {
+        ssize_t pivot = 0;
+        size_t pos = binary_search(key, 0, static_cast<ssize_t>(m_internal_vector.size()) - 1, pivot);
+
+        if (pos == m_internal_vector.size()) {
+            m_internal_vector.insert(m_internal_vector.begin() + pivot, new MapNode(key, VALUETYPE()));
+            pos = pivot;
+        }
+
+        return m_internal_vector[pos]->second;
+    }
+
+    void erase(iterator it)
+    {
+        assert(it != end());
+
+        delete it.operator->();
+        m_internal_vector.erase(it);
+    }
+
+    size_t erase(const KEYTYPE &key)
+    {
+        iterator it = find(key);
+
+        if (it != end()) {
+            erase(it);
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    void clear()
+    {
+        while (!m_internal_vector.empty()) {
+            delete m_internal_vector.back();
+            m_internal_vector.pop_back();
+        }
+    }
+
+    size_t size() const
+    {
+        return m_internal_vector.size();
+    }
+
+    bool empty() const
+    {
+        return m_internal_vector.size() == 0;
+    }
+
+private:
+    // Returns the position of "key" between [begin, end]. The argument "middle" points to
+    // the location where the element should be inserted in case it could not be found.
+    //
+    // It returns m_internal_vector.size() if is not found.
+    // "begin" and "end" can be negative values.
+    size_t binary_search(const KEYTYPE &key, ssize_t begin, ssize_t end, ssize_t &middle /*out*/) const
+    {
+        if (begin > end) {
+            return m_internal_vector.size();
+        } else {
+            middle = (ssize_t)((end - begin) / 2) + begin;
+
+            if (key < m_internal_vector[middle]->first) {
+                return binary_search(key, begin, middle - 1, middle);
+            } else if (m_internal_vector[middle]->first < key) {
+                ++middle;
+                return binary_search(key, middle, end, middle);
+            } else { // key == m_internal_vector[middle]->first
+                return middle;
+            }
+        }
+    }
+
+    inline size_t binary_search(const KEYTYPE &key, ssize_t begin, ssize_t end) const
+    {
+        ssize_t middle = 0;
+        return binary_search(key, begin, end, middle);
+    }
+
+    PairVector m_internal_vector;
+};
+
+} // namespace std

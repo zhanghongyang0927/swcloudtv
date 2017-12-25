@@ -1,0 +1,240 @@
+///
+/// \copyright Copyright © 2017 ActiveVideo, Inc. and/or its affiliates.
+/// Reproduction in whole or in part without written permission is prohibited.
+/// All rights reserved. U.S. Patents listed at http://www.activevideo.com/patents
+///
+
+#pragma once
+
+#include <stddef.h>
+#include <string.h>
+
+namespace std {
+
+class string
+{
+public:
+    typedef size_t size_type;
+
+    static const size_t npos = ~0;
+
+    string() :
+        m_data(0),
+        m_size(0),
+        m_allocated_size(0)
+    {
+    }
+
+    string(const char *s) :
+        m_data(0),
+        m_size(0),
+        m_allocated_size(0)
+    {
+        assign(s, strlen(s));
+    }
+
+    string(const char *s, size_t n) :
+        m_data(0),
+        m_size(0),
+        m_allocated_size(0)
+    {
+        assign(s, n);
+    }
+
+    string(const string &s) :
+        m_data(0),
+        m_size(0),
+        m_allocated_size(0)
+    {
+        assign(s.m_data, s.m_size);
+    }
+
+    ~string()
+    {
+        delete[] m_data;
+        m_data = 0;
+        m_size = 0;
+        m_allocated_size = 0;
+    }
+
+    string &operator=(const string &rhs)
+    {
+        if (&rhs != this) {
+            assign(rhs.m_data, rhs.m_size);
+        }
+        return *this;
+    }
+
+    string operator+(const char *rhs) const
+    {
+        string s(*this);
+        s.append(rhs);
+        return s;
+    }
+
+    string operator+(const string &rhs) const
+    {
+        string s(*this);
+        s.append(rhs);
+        return s;
+    }
+
+    string &operator+=(const std::string &s)
+    {
+        return append(s);
+    }
+
+    string &operator+=(const char *s)
+    {
+        return append(s);
+    }
+
+    string &operator+=(const char c)
+    {
+        return append(&c, 1);
+    }
+
+    bool operator==(const string &rhs) const
+    {
+        return compare(rhs) == 0;
+    }
+
+    bool operator!=(const string &rhs) const
+    {
+        return compare(rhs) != 0;
+    }
+
+    bool operator<(const string &rhs) const
+    {
+        return compare(rhs) < 0;
+    }
+
+    bool operator>(const string &rhs) const
+    {
+        return compare(rhs) > 0;
+    }
+
+    bool operator<=(const string &rhs) const
+    {
+        return compare(rhs) <= 0;
+    }
+
+    bool operator>=(const string &rhs) const
+    {
+        return compare(rhs) >= 0;
+    }
+
+    const char &operator[](size_t i) const
+    {
+        return c_str()[i];
+    }
+
+    char &operator[](size_t i)
+    {
+        return m_data[i];
+    }
+
+    const char *c_str() const
+    {
+        return m_size > 0 ? m_data : "";
+    }
+
+    size_t size() const
+    {
+        return m_size;
+    }
+
+#if 0
+    // Not supported on Windows CE, so removed it to prevent accidental use.
+    // N.B. An attempt to use our custom STL, resulted in an 'internal compiler error' on CE.
+    void clear()
+    {
+        delete[] m_data;
+        m_data = 0;
+        m_size = 0;
+        m_allocated_size = 0;
+    }
+#endif
+
+    size_t length() const
+    {
+        return m_size;
+    }
+
+    bool empty() const
+    {
+        return m_size == 0;
+    }
+
+    int compare(const char *s) const
+    {
+        return compare(std::string(s));
+    }
+
+    string &assign(const char *begin, const char *end)
+    {
+        return assign(begin, end - begin);
+    }
+
+    string &assign(const char *s)
+    {
+        return assign(s, strlen(s));
+    }
+
+    size_t find(char c, size_t pos = 0) const
+    {
+        for (size_t i = pos; i < m_size; i++) {
+            if (m_data[i] == c) {
+                return i;
+            }
+        }
+        return npos;
+    }
+
+    string substr(size_t pos = 0, size_t len = npos) const
+    {
+        string s;
+        if (pos <= m_size) {
+            s.assign(m_data + pos, len < m_size - pos ? len : m_size - pos);
+        }
+        return s;
+    }
+
+    string &append(const string &s)
+    {
+        return append(s.m_data, s.m_size);
+    }
+
+    string &append(const char *s)
+    {
+        return append(s, strlen(s));
+    }
+
+    const char *data() const
+    {
+        return m_data;
+    }
+
+    void resize(size_t count)
+    {
+        resize(count, char());
+    }
+
+    string &assign(const char *s, size_t n);
+    string &append(const char *s, size_t n);
+    size_t find(const string &s, size_t pos = 0) const;
+    int compare(const string &s) const;
+    void resize(size_t count, char c);
+
+private:
+    char *m_data;
+    size_t m_size;
+    size_t m_allocated_size;
+};
+
+inline string operator+(const char *s1, const string &s2)
+{
+    return string(s1) + s2;
+}
+
+} // namespace std

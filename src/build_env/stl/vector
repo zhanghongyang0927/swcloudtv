@@ -1,0 +1,369 @@
+///
+/// \copyright Copyright © 2017 ActiveVideo, Inc. and/or its affiliates.
+/// Reproduction in whole or in part without written permission is prohibited.
+/// All rights reserved. U.S. Patents listed at http://www.activevideo.com/patents
+///
+
+#pragma once
+
+#include <stddef.h>
+#include <string.h>
+
+#include <stdio.h>
+#include <assert.h>
+
+#ifndef CTVC_DO_NOT_DEFINE_PLACEMENT_NEW // Enables switching off this definition using a compiler switch
+
+// Default placement versions of operator new.
+inline void *operator new(size_t, void *__p)
+{
+    return __p;
+}
+#endif
+
+namespace std {
+template<typename T> class vector
+{
+public:
+    typedef T *iterator;
+    typedef const T *const_iterator;
+
+    explicit vector() :
+        m_size(0),
+        m_allocated_size(0),
+        m_data(0)
+    {
+    }
+
+    explicit vector(size_t n) :
+        m_size(0),
+        m_allocated_size(0),
+        m_data(0)
+    {
+        resize(n);
+    }
+
+    explicit vector(size_t n, const T &val) :
+        m_size(0),
+        m_allocated_size(0),
+        m_data(0)
+    {
+        resize(n, val);
+    }
+
+    vector(const T *first, const T *last) :
+        m_size(0),
+        m_allocated_size(0),
+        m_data(0)
+    {
+        assign(first, last);
+    }
+
+    vector(const vector &rhs) :
+        m_size(0),
+        m_allocated_size(0),
+        m_data(0)
+    {
+        assign(rhs.begin(), rhs.end());
+    }
+
+    ~vector()
+    {
+        clear();
+    }
+
+    vector &operator=(const vector &rhs)
+    {
+        if (&rhs != this) {
+            assign(rhs.begin(), rhs.end());
+        }
+        return *this;
+    }
+
+    T &operator[](size_t i)
+    {
+        return m_data[i];
+    }
+
+    const T &operator[](size_t i) const
+    {
+        return m_data[i];
+    }
+
+    size_t size() const
+    {
+        return m_size;
+    }
+
+    void assign(const T *first, const T *last)
+    {
+        size_t n = last - first;
+        if (n > m_allocated_size) {
+            // New size won't fit: clear and allocate all anew
+            clear();
+            insert(begin(), first, last);
+        } else {
+            if (n > m_size) {
+                // New size fits but is larger than old size: assign objects that are already present and copy construct the new ones
+                for (size_t i = 0; i < m_size; i++) {
+                    m_data[i] = first[i];
+                }
+                for (size_t i = m_size; i < n; i++) {
+                    construct(i, first[i]);
+                }
+            } else {
+                // New size is smaller than or equal to the current size: destroy excess objects and assign the rest
+                destroy(n, m_size);
+                for (size_t i = 0; i < n; i++) {
+                    m_data[i] = first[i];
+                }
+            }
+            m_size = n;
+        }
+    }
+
+    void clear()
+    {
+        // Call destructor of all objects
+        destroy(0, m_size);
+        m_size = 0;
+        cleanup();
+    }
+
+    T &back()
+    {
+        return m_data[m_size - 1];
+    }
+
+    const T &back() const
+    {
+        return m_data[m_size - 1];
+    }
+
+    void pop_back()
+    {
+        destroy(m_size - 1, m_size);
+        m_size--;
+    }
+
+    void push_back(const T &val)
+    {
+        reserve_internal(m_size + 1, true);
+        construct(m_size, val);
+        m_size += 1;
+    }
+
+    void reserve(size_t n)
+    {
+        if (n > m_size) {
+            reserve_internal(n, false);
+        }
+    }
+
+    iterator insert(iterator position, const T &val)
+    {
+        size_t i = position - begin();
+        insert(position, &val, &val + 1);
+        return &m_data[i];
+    }
+
+    void insert(iterator pos, const T *first, const T *last)
+    {
+        assert(first <= last);
+        assert(last <= begin() || first >= end());
+        assert(pos >= begin() && pos <= end());
+        size_t from_index = pos - begin();
+        size_t n_additional_elements = last - first;
+
+        size_t new_size = m_size + n_additional_elements;
+        if (new_size > m_allocated_size) {
+            // Double the size to prevent frequent reallocation
+            if (new_size <= m_allocated_size * 2) {
+                new_size = m_allocated_size * 2;
+            }
+            // Allocate space for new data
+            T *p = reinterpret_cast<T *>(new char[new_size * sizeof(T)]);
+            // Copy construct all new data until the insertion point
+            for (size_t i = 0; i < from_index; i++) {
+                construct(p + i, m_data[i]);
+            }
+            // Copy construct all inserted data from the insertion point
+            for (size_t i = 0; i < n_additional_elements; i++) {
+                construct(p + from_index + i, first[i]);
+            }
+            // Copy construct all remaining new data
+            for (size_t i = from_index; i < m_size; i++) {
+                construct(p + i + n_additional_elements, m_data[i]);
+            }
+            // Destroy all old elements
+            destroy(0, m_size);
+            // Delete old data
+            delete[] reinterpret_cast<char *>(m_data);
+            // And update the members
+            m_allocated_size = new_size;
+            m_data = p;
+        } else {
+            // We insert data in existing space
+            // First we move existing data to make space for the new data.
+            // We do this iterating backward.
+            // New space has to be copy-constructed, existing space has to be assigned.
+            for (size_t i = m_size; i-- > from_index; ) {
+                if (i + n_additional_elements >= m_size) {
+                    construct(i + n_additional_elements, m_data[i]);
+                } else {
+                    m_data[i + n_additional_elements] = m_data[i];
+                }
+            }
+            // Then we insert the data
+            // Again, new space has to be copy-constructed, existing space has to be assigned.
+            for (size_t i = 0; i < n_additional_elements; i++) {
+                if (i + from_index >= m_size) {
+                    construct(i + from_index, first[i]);
+                } else {
+                    m_data[i + from_index] = first[i];
+                }
+            }
+        }
+
+        m_size += n_additional_elements;
+    }
+
+    iterator end()
+    {
+        return &m_data[m_size];
+    }
+
+    const_iterator end() const
+    {
+        return &m_data[m_size];
+    }
+
+    bool empty() const
+    {
+        return m_size == 0;
+    }
+
+    iterator begin()
+    {
+        return &m_data[0];
+    }
+
+    const_iterator begin() const
+    {
+        return &m_data[0];
+    }
+
+    iterator erase(iterator position)
+    {
+        return erase(position, position + 1);
+    }
+
+    iterator erase(iterator first, iterator last)
+    {
+        assert(first <= last);
+        size_t n_to_remove = last - first;
+        // Move objects from high to low, looping up
+        // Objects are all aleady allocated, so we use the assignment operator on each of them.
+        for (size_t i = first - begin(); i < m_size - n_to_remove; i++) {
+            m_data[i] = m_data[i + n_to_remove];
+        }
+        // Afterward we have to destroy the freed objects at the end.
+        destroy(m_size - n_to_remove, m_size);
+        m_size -= n_to_remove;
+
+        return first;
+    }
+
+    void resize(size_t n)
+    {
+        if (n > m_size) {
+            reserve_internal(n, true);
+            for (size_t i = m_size; i < n; i++) {
+                construct(i);
+            }
+        } else {
+            destroy(n, m_size);
+        }
+        m_size = n;
+    }
+
+    void resize(size_t n, const T &val)
+    {
+        if (n > m_size) {
+            reserve_internal(n, true);
+            for (size_t i = m_size; i < n; i++) {
+                construct(i, val);
+            }
+        } else {
+            destroy(n, m_size);
+        }
+        m_size = n;
+    }
+
+private:
+    size_t m_size;
+    size_t m_allocated_size;
+    T *m_data;
+
+    void construct(size_t index)
+    {
+        // Use placement new on the new objects and copy
+        new (&m_data[index]) T();
+    }
+
+    void construct(size_t index, const T &src)
+    {
+        // Use placement new on the new objects and copy
+        new (&m_data[index]) T(src);
+    }
+
+    void construct(T *p, const T &src)
+    {
+        // Use placement new on the new objects and copy
+        new (p) T(src);
+    }
+
+    void destroy(size_t index)
+    {
+        m_data[index].~T();
+    }
+
+    void destroy(size_t start, size_t end)
+    {
+        for (size_t i = start; i < end; i++) {
+            m_data[i].~T();
+        }
+    }
+
+    void reserve_internal(size_t new_size, bool may_double)
+    {
+        if (new_size > m_allocated_size) {
+            // Double the size to prevent frequent reallocation
+            if (may_double && new_size <= m_allocated_size * 2) {
+                new_size = m_allocated_size * 2;
+            }
+            // Allocate space for new data
+            T *p = reinterpret_cast<T *>(new char[new_size * sizeof(T)]);
+            // Copy construct all new data
+            for (size_t i = 0; i < m_size; i++) {
+                construct(p + i, m_data[i]);
+            }
+            // Destroy all old elements
+            destroy(0, m_size);
+            // Delete old data
+            delete[] reinterpret_cast<char *>(m_data);
+            // And update the members
+            m_allocated_size = new_size;
+            m_data = p;
+        }
+    }
+
+    void cleanup()
+    {
+        delete[] reinterpret_cast<char *>(m_data);
+        m_size = 0;
+        m_allocated_size = 0;
+        m_data = 0;
+    }
+};
+}
